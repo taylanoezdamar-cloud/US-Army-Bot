@@ -1,19 +1,21 @@
+require("dotenv").config();
+
 const {
     Client,
     GatewayIntentBits,
     REST,
     Routes,
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    AttachmentBuilder
 } = require("discord.js");
 
 const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
 
-// ======================================================
+// =====================================================
 // BOT
-// ======================================================
+// =====================================================
 
 const client = new Client({
     intents: [
@@ -24,15 +26,16 @@ const client = new Client({
 const TOKEN = process.env.DISCORD_TOKEN;
 
 if (!TOKEN) {
-    console.error("❌ DISCORD_TOKEN fehlt in der .env");
+    console.error("❌ DISCORD_TOKEN fehlt in der .env Datei!");
     process.exit(1);
 }
 
-// ======================================================
-// PERSONAL.JSON
-// ======================================================
+// =====================================================
+// DATEIEN
+// =====================================================
 
 const PERSONAL_DATEI = path.join(__dirname, "personal.json");
+const ARMY_BILD_PFAD = path.join(__dirname, "army.png");
 
 if (!fs.existsSync(PERSONAL_DATEI)) {
     fs.writeFileSync(
@@ -51,11 +54,11 @@ function personalLaden() {
             return daten;
         }
 
-        if (!Array.isArray(daten.personal)) {
-            daten.personal = [];
+        if (Array.isArray(daten.personal)) {
+            return daten.personal;
         }
 
-        return daten.personal;
+        return [];
     } catch (error) {
         console.error("❌ Fehler beim Laden von personal.json:", error);
         return [];
@@ -65,19 +68,13 @@ function personalLaden() {
 function personalSpeichern(personal) {
     fs.writeFileSync(
         PERSONAL_DATEI,
-        JSON.stringify(
-            {
-                personal
-            },
-            null,
-            2
-        )
+        JSON.stringify({ personal }, null, 2)
     );
 }
 
-// ======================================================
+// =====================================================
 // RÄNGE
-// ======================================================
+// =====================================================
 
 const RANG_NAMEN = {
     21: "General of the Army",
@@ -103,9 +100,9 @@ const RANG_NAMEN = {
     1: "Private Second Class"
 };
 
-// ======================================================
-// EXAKTE ROLLENNAMEN
-// ======================================================
+// =====================================================
+// EXAKTE DISCORD-ROLLENNAMEN
+// =====================================================
 
 const RANG_ROLLEN = {
     21: "➛[21] General of the Army",
@@ -132,74 +129,92 @@ const RANG_ROLLEN = {
 };
 
 const EXTRA_ROLLEN = {
-    US_ARMY: "➥ U.S Army",
-    ABTEILUNGEN: "▁▁▁▁▁🢫Abteilungen🢪▁▁▁▁▁▁",
-    MANNSCHAFT: "▁▁▁▁▁🢫Mannschaft🢪▁▁▁▁▁▁",
-    UNTEROFFIZIERE: "▁▁▁▁▁🢫Unteroffiziere🢪▁▁▁▁▁▁",
-    LEUTNANT: "▁▁▁▁▁🢫Leutnant🢪▁▁▁▁▁▁",
-    HAUPTLEUTE: "▁▁▁▁▁🢫Hauptleute🢪▁▁▁▁▁▁",
-    FIELD_GRADE_OFFICER: "▁▁▁▁▁🢫Field Grade Officer🢪▁▁▁▁▁▁",
-    GENERAL: "▁▁▁▁▁General🢪▁▁▁▁▁▁",
-    BURGER: "➥ Bürger"
+    army: "➥ U.S Army",
+
+    abteilungen:
+        "▁▁▁▁▁🢫Abteilungen🢪▁▁▁▁▁▁",
+
+    mannschaft:
+        "▁▁▁▁▁🢫Mannschaft🢪▁▁▁▁▁▁",
+
+    unteroffiziere:
+        "▁▁▁▁▁🢫Unteroffiziere🢪▁▁▁▁▁▁",
+
+    leutnant:
+        "▁▁▁▁▁🢫Leutnant🢪▁▁▁▁▁▁",
+
+    hauptleute:
+        "▁▁▁▁▁🢫Hauptleute🢪▁▁▁▁▁▁",
+
+    fieldGradeOfficer:
+        "▁▁▁▁▁🢫Field Grade Officer🢪▁▁▁▁▁▁",
+
+    general:
+        "▁▁▁▁▁General🢪▁▁▁▁▁▁",
+
+    buerger:
+        "➥ Bürger"
 };
 
-// ======================================================
-// EXTRA-ROLLEN NACH RANG
-// ======================================================
+// =====================================================
+// ZUSATZROLLEN JE NACH RANG
+// =====================================================
 
 function extraRollenFuerRang(rang) {
+    rang = Number(rang);
+
     const rollen = [
-        EXTRA_ROLLEN.US_ARMY,
-        EXTRA_ROLLEN.ABTEILUNGEN
+        EXTRA_ROLLEN.army,
+        EXTRA_ROLLEN.abteilungen
     ];
 
-    if (rang >= 19 && rang <= 21) {
+    if (rang >= 19) {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT,
-            EXTRA_ROLLEN.UNTEROFFIZIERE,
-            EXTRA_ROLLEN.LEUTNANT,
-            EXTRA_ROLLEN.HAUPTLEUTE,
-            EXTRA_ROLLEN.FIELD_GRADE_OFFICER,
-            EXTRA_ROLLEN.GENERAL
+            EXTRA_ROLLEN.mannschaft,
+            EXTRA_ROLLEN.unteroffiziere,
+            EXTRA_ROLLEN.leutnant,
+            EXTRA_ROLLEN.hauptleute,
+            EXTRA_ROLLEN.fieldGradeOfficer,
+            EXTRA_ROLLEN.general
         );
-    } else if (rang >= 16 && rang <= 18) {
+    } else if (rang >= 16) {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT,
-            EXTRA_ROLLEN.UNTEROFFIZIERE,
-            EXTRA_ROLLEN.LEUTNANT,
-            EXTRA_ROLLEN.HAUPTLEUTE,
-            EXTRA_ROLLEN.FIELD_GRADE_OFFICER
+            EXTRA_ROLLEN.mannschaft,
+            EXTRA_ROLLEN.unteroffiziere,
+            EXTRA_ROLLEN.leutnant,
+            EXTRA_ROLLEN.hauptleute,
+            EXTRA_ROLLEN.fieldGradeOfficer
         );
-    } else if (rang >= 14 && rang <= 15) {
+    } else if (rang >= 14) {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT,
-            EXTRA_ROLLEN.UNTEROFFIZIERE,
-            EXTRA_ROLLEN.LEUTNANT,
-            EXTRA_ROLLEN.HAUPTLEUTE
+            EXTRA_ROLLEN.mannschaft,
+            EXTRA_ROLLEN.unteroffiziere,
+            EXTRA_ROLLEN.leutnant,
+            EXTRA_ROLLEN.hauptleute
         );
-    } else if (rang >= 12 && rang <= 13) {
+    } else if (rang >= 12) {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT,
-            EXTRA_ROLLEN.UNTEROFFIZIERE,
-            EXTRA_ROLLEN.LEUTNANT
+            EXTRA_ROLLEN.mannschaft,
+            EXTRA_ROLLEN.unteroffiziere,
+            EXTRA_ROLLEN.leutnant
         );
-    } else if (rang >= 5 && rang <= 11) {
+    } else if (rang >= 5) {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT,
-            EXTRA_ROLLEN.UNTEROFFIZIERE
+            EXTRA_ROLLEN.mannschaft,
+            EXTRA_ROLLEN.unteroffiziere
         );
-    } else if (rang >= 1 && rang <= 4) {
+    } else {
         rollen.push(
-            EXTRA_ROLLEN.MANNSCHAFT
+            EXTRA_ROLLEN.mannschaft
         );
     }
 
     return rollen;
 }
 
-// ======================================================
-// ROLLEN FINDEN
-// ======================================================
+// =====================================================
+// ROLLE SUCHEN
+// =====================================================
 
 function rolleFinden(guild, rollenName) {
     return guild.roles.cache.find(
@@ -207,74 +222,154 @@ function rolleFinden(guild, rollenName) {
     );
 }
 
-// ======================================================
+// =====================================================
+// ALLE ARMY-ROLLEN
+// =====================================================
+
+function alleArmyRollen() {
+    return [
+        ...Object.values(RANG_ROLLEN),
+        ...Object.values(EXTRA_ROLLEN)
+    ];
+}
+
+// =====================================================
+// ALTE ARMY-ROLLEN ENTFERNEN
+// =====================================================
+
+async function alteArmyRollenEntfernen(member) {
+    const armyRollen = alleArmyRollen();
+
+    for (const role of member.roles.cache.values()) {
+        if (
+            armyRollen.includes(role.name) &&
+            role.editable
+        ) {
+            try {
+                await member.roles.remove(role);
+            } catch (error) {
+                console.error(
+                    `❌ Konnte Rolle "${role.name}" nicht entfernen:`,
+                    error.message
+                );
+            }
+        }
+    }
+}
+
+// =====================================================
+// ROLLEN FÜR EINEN RANG SETZEN
+// =====================================================
+
+async function rollenFuerRangSetzen(member, rang) {
+    rang = Number(rang);
+
+    const benoetigteRollen = [
+        RANG_ROLLEN[rang],
+        ...extraRollenFuerRang(rang)
+    ];
+
+    // Alte Army-Rollen entfernen
+    await alteArmyRollenEntfernen(member);
+
+    // Bürger entfernen
+    const buerger = rolleFinden(
+        member.guild,
+        EXTRA_ROLLEN.buerger
+    );
+
+    if (
+        buerger &&
+        member.roles.cache.has(buerger.id) &&
+        buerger.editable
+    ) {
+        try {
+            await member.roles.remove(buerger);
+        } catch (error) {
+            console.error(
+                "❌ Bürger-Rolle konnte nicht entfernt werden:",
+                error.message
+            );
+        }
+    }
+
+    // Neue Rollen hinzufügen
+    for (const rollenName of benoetigteRollen) {
+        const rolle = rolleFinden(
+            member.guild,
+            rollenName
+        );
+
+        if (!rolle) {
+            console.warn(
+                `⚠️ Rolle nicht gefunden: ${rollenName}`
+            );
+            continue;
+        }
+
+        if (!rolle.editable) {
+            console.warn(
+                `⚠️ Rolle kann nicht vergeben werden: ${rollenName}`
+            );
+            continue;
+        }
+
+        if (!member.roles.cache.has(rolle.id)) {
+            try {
+                await member.roles.add(rolle);
+            } catch (error) {
+                console.error(
+                    `❌ Rolle "${rollenName}" konnte nicht vergeben werden:`,
+                    error.message
+                );
+            }
+        }
+    }
+}
+
+// =====================================================
 // DIENSTNUMMER
-// ======================================================
+// =====================================================
 
-function dienstnummerErmitteln(rang, personal) {
+function dienstnummernImEinsatz(personal, eigeneDiscordID = null) {
+    return personal
+        .filter(person => person.discordId !== eigeneDiscordID)
+        .map(person => String(person.dienstnummer).padStart(2, "0"));
+}
 
-    // Rang 21 = 01 / 02
+function dienstnummerErmitteln(personal, rang) {
+    rang = Number(rang);
+
+    const benutzt = dienstnummernImEinsatz(personal);
+
+    // Rang 21 -> 01 / 02
     if (rang === 21) {
-        const nummern = ["01", "02"];
-
-        for (const nummer of nummern) {
-            const belegt = personal.some(
-                person => person.dienstnummer === nummer
-            );
-
-            if (!belegt) {
-                return nummer;
-            }
-        }
-
+        if (!benutzt.includes("01")) return "01";
+        if (!benutzt.includes("02")) return "02";
         return null;
     }
 
-    // Rang 20 = 03 / 04
+    // Rang 20 -> 03 / 04
     if (rang === 20) {
-        const nummern = ["03", "04"];
-
-        for (const nummer of nummern) {
-            const belegt = personal.some(
-                person => person.dienstnummer === nummer
-            );
-
-            if (!belegt) {
-                return nummer;
-            }
-        }
-
+        if (!benutzt.includes("03")) return "03";
+        if (!benutzt.includes("04")) return "04";
         return null;
     }
 
-    // Rang 19 = 05 / 06
+    // Rang 19 -> 05 / 06
     if (rang === 19) {
-        const nummern = ["05", "06"];
-
-        for (const nummer of nummern) {
-            const belegt = personal.some(
-                person => person.dienstnummer === nummer
-            );
-
-            if (!belegt) {
-                return nummer;
-            }
-        }
-
+        if (!benutzt.includes("05")) return "05";
+        if (!benutzt.includes("06")) return "06";
         return null;
     }
 
-    // Rang 18 bis 1 = 07 bis 99
+    // Rang 18-1 -> 07-99
     const freieNummern = [];
 
     for (let i = 7; i <= 99; i++) {
         const nummer = String(i).padStart(2, "0");
 
-        const belegt = personal.some(
-            person => person.dienstnummer === nummer
-        );
-
-        if (!belegt) {
+        if (!benutzt.includes(nummer)) {
             freieNummern.push(nummer);
         }
     }
@@ -288,364 +383,254 @@ function dienstnummerErmitteln(rang, personal) {
     ];
 }
 
-// ======================================================
+// =====================================================
 // DIENSTNUMMER FÜR UPRANK
-// ======================================================
+// =====================================================
 
-function dienstnummerFuerUprank(rang, personal, alteDienstnummer) {
+function dienstnummerFuerUprank(
+    personal,
+    rang,
+    eigeneDiscordID
+) {
+    rang = Number(rang);
 
-    const anderePersonal = personal.filter(
-        person => person.dienstnummer !== alteDienstnummer
+    const benutzt = dienstnummernImEinsatz(
+        personal,
+        eigeneDiscordID
     );
 
-    return dienstnummerErmitteln(
-        rang,
-        anderePersonal
-    );
-}
-
-// ======================================================
-// ARMY BILD
-// ======================================================
-
-const ARMY_BILD_URL =
-    "https://cdn.discordapp.com/attachments/1549718870691160115/1550820644034322503/image-3.png?ex=6aafb9c6&is=6aae6846&hm=7f7cf2f66aaa643aaefb3269cd026a730025890c88b003f5c913dc298da4ac8b";
-
-// ======================================================
-// ALLE ARMY-ROLLEN
-// ======================================================
-
-function alleArmyRollen() {
-    return [
-        ...Object.values(RANG_ROLLEN),
-        ...Object.values(EXTRA_ROLLEN)
-    ];
-}
-
-// ======================================================
-// ARMY ROLLEN ENTFERNEN
-// ======================================================
-
-async function alteArmyRollenEntfernen(member) {
-
-    const rollenNamen = alleArmyRollen();
-
-    const entfernen = member.roles.cache.filter(
-        role => rollenNamen.includes(role.name)
-    );
-
-    if (entfernen.size > 0) {
-        await member.roles.remove(entfernen);
-    }
-}
-
-// ======================================================
-// ROLLEN FÜR EINEN RANG GEBEN
-// ======================================================
-
-async function rollenFuerRangSetzen(member, rang) {
-
-    const rangRollenName = RANG_ROLLEN[rang];
-
-    if (!rangRollenName) {
-        throw new Error(
-            `Keine Rangrolle für Rang ${rang} gefunden.`
-        );
+    if (rang === 21) {
+        if (!benutzt.includes("01")) return "01";
+        if (!benutzt.includes("02")) return "02";
+        return null;
     }
 
-    const rollenNamen = [
-        rangRollenName,
-        ...extraRollenFuerRang(rang)
-    ];
+    if (rang === 20) {
+        if (!benutzt.includes("03")) return "03";
+        if (!benutzt.includes("04")) return "04";
+        return null;
+    }
 
-    const rollen = [];
+    if (rang === 19) {
+        if (!benutzt.includes("05")) return "05";
+        if (!benutzt.includes("06")) return "06";
+        return null;
+    }
 
-    for (const rollenName of rollenNamen) {
+    const freieNummern = [];
 
-        const rolle = rolleFinden(
-            member.guild,
-            rollenName
-        );
+    for (let i = 7; i <= 99; i++) {
+        const nummer = String(i).padStart(2, "0");
 
-        if (!rolle) {
-            throw new Error(
-                `Die Discord-Rolle "${rollenName}" wurde nicht gefunden.`
-            );
+        if (!benutzt.includes(nummer)) {
+            freieNummern.push(nummer);
         }
-
-        rollen.push(rolle);
     }
 
-    await member.roles.add(rollen);
+    if (freieNummern.length === 0) {
+        return null;
+    }
+
+    return freieNummern[
+        Math.floor(Math.random() * freieNummern.length)
+    ];
 }
 
-// ======================================================
+// =====================================================
+// NICKNAME
+// =====================================================
+
+function armyNickname(dienstnummer, icName) {
+    let nickname = `[ARMY-${dienstnummer}] ${icName}`;
+
+    // Discord erlaubt maximal 32 Zeichen
+    if (nickname.length > 32) {
+        nickname = nickname.substring(0, 32);
+    }
+
+    return nickname;
+}
+
+// =====================================================
+// ARMY BILD
+// =====================================================
+
+function armyBildErstellen() {
+    if (!fs.existsSync(ARMY_BILD_PFAD)) {
+        console.warn(
+            "⚠️ army.png wurde nicht gefunden!"
+        );
+        return null;
+    }
+
+    return new AttachmentBuilder(
+        ARMY_BILD_PFAD,
+        {
+            name: "army.png"
+        }
+    );
+}
+
+// =====================================================
 // SLASH COMMANDS
-// ======================================================
+// =====================================================
+
+const rangChoices = Object.entries(RANG_NAMEN).map(
+    ([rang, name]) => ({
+        name: `[${String(rang).padStart(2, "0")}] ${name}`,
+        value: rang
+    })
+);
 
 const commands = [
 
-    // --------------------------------------------------
+    // =========================
     // PING
-    // --------------------------------------------------
+    // =========================
 
     new SlashCommandBuilder()
         .setName("ping")
         .setDescription("Zeigt die Bot-Latenz an."),
 
-    // --------------------------------------------------
-    // PERSONAL EINSTELLEN
-    // --------------------------------------------------
+    // =========================
+    // PERSONAL
+    // =========================
 
     new SlashCommandBuilder()
         .setName("personal")
-        .setDescription("US-Army Personalverwaltung")
+        .setDescription("Verwalte das U.S.Army Personal.")
+
+        // =========================
+        // EINSTELLEN
+        // =========================
 
         .addSubcommand(subcommand =>
             subcommand
                 .setName("einstellen")
-                .setDescription("Stellt ein Mitglied in die U.S.Army ein.")
+                .setDescription("Stellt ein neues Personalmitglied ein.")
 
                 .addUserOption(option =>
                     option
                         .setName("mitglied")
-                        .setDescription("Das einzustellende Discord-Mitglied.")
+                        .setDescription("Discord-Mitglied")
                         .setRequired(true)
                 )
 
                 .addStringOption(option =>
                     option
                         .setName("ic_name")
-                        .setDescription("Der IC-Name.")
+                        .setDescription("IC-Name des Personalmitglieds")
                         .setRequired(true)
                 )
 
-                .addIntegerOption(option =>
+                .addStringOption(option =>
                     option
                         .setName("rang")
-                        .setDescription("Der Rang des Mitglieds.")
+                        .setDescription("Rang des Personalmitglieds")
                         .setRequired(true)
-                        .addChoices(
-                            {
-                                name: "[21] General of the Army",
-                                value: 21
-                            },
-                            {
-                                name: "[20] General",
-                                value: 20
-                            },
-                            {
-                                name: "[19] Lieutnant General",
-                                value: 19
-                            },
-                            {
-                                name: "[18] Captain",
-                                value: 18
-                            },
-                            {
-                                name: "[17] First Lieutenant",
-                                value: 17
-                            },
-                            {
-                                name: "[16] Second Lieutenant",
-                                value: 16
-                            },
-                            {
-                                name: "[15] Chief Warrant Officer III",
-                                value: 15
-                            },
-                            {
-                                name: "[14] Chief Warrant Officer II",
-                                value: 14
-                            },
-                            {
-                                name: "[13] Chief Warrant Officer I",
-                                value: 13
-                            },
-                            {
-                                name: "[12] Warrant Officer II",
-                                value: 12
-                            },
-                            {
-                                name: "[11] Warrant Officer I",
-                                value: 11
-                            },
-                            {
-                                name: "[10] Command Sergeant Major",
-                                value: 10
-                            },
-                            {
-                                name: "[09] First Sergeant",
-                                value: 9
-                            },
-                            {
-                                name: "[08] Master Sergeant",
-                                value: 8
-                            },
-                            {
-                                name: "[07] Sergeant First Class",
-                                value: 7
-                            },
-                            {
-                                name: "[06] Staff Sergeant",
-                                value: 6
-                            },
-                            {
-                                name: "[05] Sergeant",
-                                value: 5
-                            },
-                            {
-                                name: "[04] Corporal",
-                                value: 4
-                            },
-                            {
-                                name: "[03] Specialist",
-                                value: 3
-                            },
-                            {
-                                name: "[02] Private First Class",
-                                value: 2
-                            },
-                            {
-                                name: "[01] Private Second Class",
-                                value: 1
-                            }
-                        )
+                        .addChoices(...rangChoices)
                 )
         )
 
-        // --------------------------------------------------
-        // PERSONAL ENTLASSEN
-        // --------------------------------------------------
+        // =========================
+        // ENTLASSEN
+        // =========================
 
         .addSubcommand(subcommand =>
             subcommand
                 .setName("entlassen")
-                .setDescription("Entlässt ein Mitglied aus der U.S.Army.")
+                .setDescription("Entlässt ein Personalmitglied.")
 
                 .addUserOption(option =>
                     option
                         .setName("mitglied")
-                        .setDescription("Das zu entlassende Mitglied.")
+                        .setDescription("Discord-Mitglied")
                         .setRequired(true)
                 )
 
                 .addStringOption(option =>
                     option
                         .setName("ic_name")
-                        .setDescription("Der IC-Name.")
+                        .setDescription("IC-Name")
                         .setRequired(true)
                 )
 
                 .addStringOption(option =>
                     option
                         .setName("grund")
-                        .setDescription("Grund der Kündigung.")
+                        .setDescription("Grund der Entlassung")
                         .setRequired(true)
                 )
         )
 
-        // --------------------------------------------------
-        // PERSONAL UPRANK
-        // --------------------------------------------------
+        // =========================
+        // UPRANK
+        // =========================
 
         .addSubcommand(subcommand =>
             subcommand
                 .setName("uprank")
-                .setDescription("Befördert ein Mitglied.")
+                .setDescription("Befördert ein Personalmitglied.")
 
                 .addUserOption(option =>
                     option
                         .setName("mitglied")
-                        .setDescription("Das zu befördernde Mitglied.")
+                        .setDescription("Discord-Mitglied")
                         .setRequired(true)
                 )
 
-                .addIntegerOption(option =>
+                .addStringOption(option =>
                     option
                         .setName("alter_rang")
-                        .setDescription("Der aktuelle Rang.")
+                        .setDescription("Bisheriger Rang")
                         .setRequired(true)
-                        .addChoices(
-                            { name: "[21] General of the Army", value: 21 },
-                            { name: "[20] General", value: 20 },
-                            { name: "[19] Lieutnant General", value: 19 },
-                            { name: "[18] Captain", value: 18 },
-                            { name: "[17] First Lieutenant", value: 17 },
-                            { name: "[16] Second Lieutenant", value: 16 },
-                            { name: "[15] Chief Warrant Officer III", value: 15 },
-                            { name: "[14] Chief Warrant Officer II", value: 14 },
-                            { name: "[13] Chief Warrant Officer I", value: 13 },
-                            { name: "[12] Warrant Officer II", value: 12 },
-                            { name: "[11] Warrant Officer I", value: 11 },
-                            { name: "[10] Command Sergeant Major", value: 10 },
-                            { name: "[09] First Sergeant", value: 9 },
-                            { name: "[08] Master Sergeant", value: 8 },
-                            { name: "[07] Sergeant First Class", value: 7 },
-                            { name: "[06] Staff Sergeant", value: 6 },
-                            { name: "[05] Sergeant", value: 5 },
-                            { name: "[04] Corporal", value: 4 },
-                            { name: "[03] Specialist", value: 3 },
-                            { name: "[02] Private First Class", value: 2 },
-                            { name: "[01] Private Second Class", value: 1 }
-                        )
+                        .addChoices(...rangChoices)
                 )
 
-                .addIntegerOption(option =>
+                .addStringOption(option =>
                     option
                         .setName("neuer_rang")
-                        .setDescription("Der neue Rang.")
+                        .setDescription("Neuer Rang")
                         .setRequired(true)
-                        .addChoices(
-                            { name: "[21] General of the Army", value: 21 },
-                            { name: "[20] General", value: 20 },
-                            { name: "[19] Lieutnant General", value: 19 },
-                            { name: "[18] Captain", value: 18 },
-                            { name: "[17] First Lieutenant", value: 17 },
-                            { name: "[16] Second Lieutenant", value: 16 },
-                            { name: "[15] Chief Warrant Officer III", value: 15 },
-                            { name: "[14] Chief Warrant Officer II", value: 14 },
-                            { name: "[13] Chief Warrant Officer I", value: 13 },
-                            { name: "[12] Warrant Officer II", value: 12 },
-                            { name: "[11] Warrant Officer I", value: 11 },
-                            { name: "[10] Command Sergeant Major", value: 10 },
-                            { name: "[09] First Sergeant", value: 9 },
-                            { name: "[08] Master Sergeant", value: 8 },
-                            { name: "[07] Sergeant First Class", value: 7 },
-                            { name: "[06] Staff Sergeant", value: 6 },
-                            { name: "[05] Sergeant", value: 5 },
-                            { name: "[04] Corporal", value: 4 },
-                            { name: "[03] Specialist", value: 3 },
-                            { name: "[02] Private First Class", value: 2 },
-                            { name: "[01] Private Second Class", value: 1 }
-                        )
+                        .addChoices(...rangChoices)
                 )
 
                 .addStringOption(option =>
                     option
                         .setName("grund")
-                        .setDescription("Grund der Beförderung.")
+                        .setDescription("Grund der Beförderung")
                         .setRequired(true)
                 )
         )
 ];
 
-// ======================================================
-// READY
-// ======================================================
+// =====================================================
+// COMMANDS REGISTRIEREN
+// =====================================================
+
+const rest = new REST({ version: "10" })
+    .setToken(TOKEN);
+
+// =====================================================
+// BOT READY
+// =====================================================
 
 client.once("ready", async () => {
 
-    console.log(`✅ Bot ist online als ${client.user.tag}`);
+    console.log("");
+    console.log("======================================");
+    console.log(`✅ Bot online: ${client.user.tag}`);
+    console.log(`🆔 Bot-ID: ${client.user.id}`);
+    console.log("======================================");
+    console.log("");
 
     try {
-
-        const rest = new REST({
-            version: "10"
-        }).setToken(TOKEN);
+        console.log("🔄 Registriere Slash-Commands...");
 
         await rest.put(
-            Routes.applicationCommands(client.user.id),
+            Routes.applicationCommands(
+                client.user.id
+            ),
             {
                 body: commands.map(command =>
                     command.toJSON()
@@ -653,10 +638,9 @@ client.once("ready", async () => {
             }
         );
 
-        console.log("✅ Slash Commands wurden registriert.");
-
+        console.log("✅ Slash-Commands registriert.");
+        console.log("");
     } catch (error) {
-
         console.error(
             "❌ Fehler beim Registrieren der Commands:",
             error
@@ -664,9 +648,9 @@ client.once("ready", async () => {
     }
 });
 
-// ======================================================
+// =====================================================
 // INTERACTIONS
-// ======================================================
+// =====================================================
 
 client.on("interactionCreate", async interaction => {
 
@@ -674,130 +658,168 @@ client.on("interactionCreate", async interaction => {
         return;
     }
 
-    // ==================================================
+    // =================================================
     // PING
-    // ==================================================
+    // =================================================
 
     if (interaction.commandName === "ping") {
 
-        await interaction.reply({
-            content: `🏓 Pong! ${client.ws.ping}ms`
-        });
+        const ping =
+            Date.now() - interaction.createdTimestamp;
+
+        await interaction.reply(
+            `🏓 Pong!\nLatenz: **${ping}ms**`
+        );
 
         return;
     }
+
+    // =================================================
+    // PERSONAL
+    // =================================================
 
     if (interaction.commandName !== "personal") {
         return;
     }
 
-    const subcommand = interaction.options.getSubcommand();
+    const subcommand =
+        interaction.options.getSubcommand();
 
-    // ==================================================
-    // PERSONAL EINSTELLEN
-    // ==================================================
+    // Für längere Discord-Aktionen
+    await interaction.deferReply();
 
-    if (subcommand === "einstellen") {
+    try {
 
-        const mitglied =
-            interaction.options.getMember("mitglied");
+        const guild = interaction.guild;
 
-        const user =
-            interaction.options.getUser("mitglied");
-
-        const icName =
-            interaction.options.getString("ic_name");
-
-        const rang =
-            interaction.options.getInteger("rang");
-
-        if (!mitglied) {
-
-            await interaction.reply({
-                content: "❌ Das Mitglied konnte nicht gefunden werden.",
-                ephemeral: true
-            });
-
+        if (!guild) {
+            await interaction.editReply(
+                "❌ Dieser Command kann nur auf einem Server verwendet werden."
+            );
             return;
         }
 
-        await interaction.deferReply();
+        // =================================================
+        // PERSONAL EINSTELLEN
+        // =================================================
 
-        try {
+        if (subcommand === "einstellen") {
 
-            const personal = personalLaden();
+            const user =
+                interaction.options.getUser("mitglied");
 
-            // Prüfen, ob bereits eingestellt
-            const bereitsVorhanden = personal.find(
-                person => person.userId === user.id
-            );
+            const icName =
+                interaction.options.getString("ic_name");
 
-            if (bereitsVorhanden) {
+            const rang =
+                Number(
+                    interaction.options.getString("rang")
+                );
 
-                await interaction.editReply({
-                    content:
-                        "❌ Dieses Mitglied ist bereits in der U.S.Army."
-                });
+            let personal = personalLaden();
 
+            // Mitglied laden
+            let member;
+
+            try {
+                member =
+                    await guild.members.fetch(user.id);
+            } catch {
+                await interaction.editReply(
+                    "❌ Das Mitglied konnte nicht geladen werden."
+                );
                 return;
             }
 
-            // Dienstnummer bestimmen
+            // Prüfen, ob bereits Personal
+            const bereitsPersonal =
+                personal.find(
+                    person =>
+                        person.discordId === user.id
+                );
+
+            if (bereitsPersonal) {
+                await interaction.editReply(
+                    `❌ ${user} ist bereits beim U.S.Army Personal eingetragen.\n` +
+                    `Dienstnummer: **${bereitsPersonal.dienstnummer}**`
+                );
+                return;
+            }
+
+            // Rang prüfen
+            if (!RANG_ROLLEN[rang]) {
+                await interaction.editReply(
+                    "❌ Dieser Rang ist ungültig."
+                );
+                return;
+            }
+
+            // Dienstnummer ermitteln
             const dienstnummer =
                 dienstnummerErmitteln(
-                    rang,
-                    personal
+                    personal,
+                    rang
                 );
 
             if (!dienstnummer) {
 
-                await interaction.editReply({
-                    content:
-                        `❌ Der Rang **[${String(rang).padStart(2, "0")}] ${RANG_NAMEN[rang]}** ist voll bzw. es ist keine Dienstnummer verfügbar.`
-                });
+                let text;
 
+                if (rang === 21) {
+                    text =
+                        "❌ Der Rang **21 – General of the Army** ist bereits voll.\n" +
+                        "Es können maximal **2 Personen** diesen Rang besitzen.";
+                } else if (rang === 20) {
+                    text =
+                        "❌ Der Rang **20 – General** ist bereits voll.\n" +
+                        "Es können maximal **2 Personen** diesen Rang besitzen.";
+                } else if (rang === 19) {
+                    text =
+                        "❌ Der Rang **19 – Lieutnant General** ist bereits voll.\n" +
+                        "Es können maximal **2 Personen** diesen Rang besitzen.";
+                } else {
+                    text =
+                        "❌ Es ist keine freie Dienstnummer mehr verfügbar.";
+                }
+
+                await interaction.editReply(text);
                 return;
             }
 
-            // Original-Nickname speichern
-            const originalNickname =
-                mitglied.nickname || null;
-
-            // Alte Army-Rollen entfernen
-            await alteArmyRollenEntfernen(
-                mitglied
-            );
-
-            // Neue Rollen setzen
+            // Alte Rollen entfernen + neue Rollen setzen
             await rollenFuerRangSetzen(
-                mitglied,
+                member,
                 rang
             );
 
+            // Originalen Nickname speichern
+            const originalNickname =
+                member.nickname || member.user.username;
+
             // Neuer Nickname
-            let neuerNickname =
-                `[ARMY-${dienstnummer}] ${icName}`;
-
-            if (neuerNickname.length > 32) {
-                neuerNickname =
-                    neuerNickname.substring(0, 32);
-            }
-
-            try {
-                await mitglied.setNickname(
-                    neuerNickname
+            const neuerNickname =
+                armyNickname(
+                    dienstnummer,
+                    icName
                 );
-            } catch (nicknameError) {
-                console.log(
-                    "⚠️ Nickname konnte nicht geändert werden:",
-                    nicknameError.message
-                );
+
+            if (member.manageable) {
+                try {
+                    await member.setNickname(
+                        neuerNickname
+                    );
+                } catch (error) {
+                    console.error(
+                        "❌ Nickname konnte nicht geändert werden:",
+                        error.message
+                    );
+                }
             }
 
             // Personal speichern
-            personal.push({
-                userId: user.id,
-                discordName: user.tag,
+            const neuerEintrag = {
+                discordId: user.id,
+                discordTag: user.tag,
                 icName: icName,
                 rang: rang,
                 rangName: RANG_NAMEN[rang],
@@ -805,7 +827,9 @@ client.on("interactionCreate", async interaction => {
                 originalNickname: originalNickname,
                 eingestelltVon: interaction.user.id,
                 eingestelltAm: new Date().toISOString()
-            });
+            };
+
+            personal.push(neuerEintrag);
 
             personalSpeichern(personal);
 
@@ -814,32 +838,32 @@ client.on("interactionCreate", async interaction => {
                 new EmbedBuilder()
                     .setTitle("🇺🇸 Personal eingestellt")
                     .setDescription(
-                        `${user} wurde erfolgreich in die **U.S.Army** eingestellt.`
+                        `${user} wurde erfolgreich in das **U.S.Army** Personal aufgenommen.`
                     )
                     .addFields(
                         {
                             name: "🪪 Dienstnummer",
-                            value: dienstnummer,
+                            value: `**${dienstnummer}**`,
                             inline: true
                         },
                         {
                             name: "🎖️ Rang",
                             value:
-                                `[${String(rang).padStart(2, "0")}] ${RANG_NAMEN[rang]}`,
+                                `**[${String(rang).padStart(2, "0")}] ${RANG_NAMEN[rang]}**`,
                             inline: true
                         },
                         {
-                            name: "🎭 IC Name",
-                            value: icName,
+                            name: "👤 IC-Name",
+                            value: `**${icName}**`,
                             inline: true
                         },
                         {
-                            name: "🎮 Discord",
+                            name: "💬 Discord",
                             value: `${user}`,
                             inline: true
                         },
                         {
-                            name: "👤 Eingestellt von",
+                            name: "👮 Eingestellt von",
                             value: `${interaction.user}`,
                             inline: true
                         },
@@ -850,146 +874,156 @@ client.on("interactionCreate", async interaction => {
                             inline: true
                         }
                     )
-                    .setImage(ARMY_BILD_URL)
                     .setFooter({
                         text: "US-Army | ExodusV"
                     })
                     .setTimestamp();
 
-            await interaction.editReply({
-                embeds: [embed]
-            });
+            const armyBild =
+                armyBildErstellen();
 
-        } catch (error) {
+            if (armyBild) {
+                embed.setImage(
+                    "attachment://army.png"
+                );
+            }
 
-            console.error(
-                "❌ Fehler bei Personal einstellen:",
-                error
-            );
-
-            await interaction.editReply({
-                content:
-                    `❌ Fehler beim Einstellen:\n\`${error.message}\``
-            });
-        }
-
-        return;
-    }
-
-    // ==================================================
-    // PERSONAL ENTLASSEN
-    // ==================================================
-
-    if (subcommand === "entlassen") {
-
-        const mitglied =
-            interaction.options.getMember("mitglied");
-
-        const user =
-            interaction.options.getUser("mitglied");
-
-        const icName =
-            interaction.options.getString("ic_name");
-
-        const grund =
-            interaction.options.getString("grund");
-
-        if (!mitglied) {
-
-            await interaction.reply({
-                content:
-                    "❌ Das Mitglied konnte nicht gefunden werden.",
-                ephemeral: true
-            });
+            if (armyBild) {
+                await interaction.editReply({
+                    embeds: [embed],
+                    files: [armyBild]
+                });
+            } else {
+                await interaction.editReply({
+                    embeds: [embed]
+                });
+            }
 
             return;
         }
 
-        await interaction.deferReply();
+        // =================================================
+        // PERSONAL ENTLASSEN
+        // =================================================
 
-        try {
+        if (subcommand === "entlassen") {
 
-            const personal = personalLaden();
+            const user =
+                interaction.options.getUser("mitglied");
 
-            const personIndex =
-                personal.findIndex(
-                    person => person.userId === user.id
+            const icName =
+                interaction.options.getString("ic_name");
+
+            const grund =
+                interaction.options.getString("grund");
+
+            let personal = personalLaden();
+
+            let member;
+
+            try {
+                member =
+                    await guild.members.fetch(user.id);
+            } catch {
+                await interaction.editReply(
+                    "❌ Das Mitglied konnte nicht geladen werden."
                 );
-
-            if (personIndex === -1) {
-
-                await interaction.editReply({
-                    content:
-                        "❌ Dieses Mitglied wurde nicht in der Personaldatei gefunden."
-                });
-
                 return;
             }
 
-            const person =
-                personal[personIndex];
-
-            // Alle Rollen außer @everyone entfernen
-            const rollenZumEntfernen =
-                mitglied.roles.cache.filter(
-                    role => role.name !== "@everyone"
+            const eintrag =
+                personal.find(
+                    person =>
+                        person.discordId === user.id
                 );
 
-            if (rollenZumEntfernen.size > 0) {
-                await mitglied.roles.remove(
-                    rollenZumEntfernen
+            if (!eintrag) {
+                await interaction.editReply(
+                    "❌ Dieses Mitglied befindet sich nicht im U.S.Army Personal."
                 );
+                return;
             }
 
-            // Bürger-Rolle finden
-            const buergerRolle =
-                rolleFinden(
-                    interaction.guild,
-                    EXTRA_ROLLEN.BURGER
-                );
+            // Alle Rollen entfernen außer @everyone
+            for (const role of member.roles.cache.values()) {
 
-            if (!buergerRolle) {
+                if (
+                    role.id === guild.roles.everyone.id
+                ) {
+                    continue;
+                }
 
-                await interaction.editReply({
-                    content:
-                        `❌ Die Bürger-Rolle "${EXTRA_ROLLEN.BURGER}" wurde nicht gefunden.`
-                });
+                if (!role.editable) {
+                    continue;
+                }
 
-                return;
+                try {
+                    await member.roles.remove(role);
+                } catch (error) {
+                    console.error(
+                        `❌ Rolle "${role.name}" konnte nicht entfernt werden:`,
+                        error.message
+                    );
+                }
             }
 
             // Bürger-Rolle geben
-            await mitglied.roles.add(
-                buergerRolle
-            );
+            const buerger =
+                rolleFinden(
+                    guild,
+                    EXTRA_ROLLEN.buerger
+                );
 
-            // Original-Nickname wiederherstellen
-            try {
+            if (buerger) {
 
-                if (person.originalNickname) {
+                if (buerger.editable) {
 
-                    await mitglied.setNickname(
-                        person.originalNickname
-                    );
+                    try {
+                        await member.roles.add(
+                            buerger
+                        );
+                    } catch (error) {
+                        console.error(
+                            "❌ Bürger-Rolle konnte nicht vergeben werden:",
+                            error.message
+                        );
+                    }
 
                 } else {
-
-                    await mitglied.setNickname(null);
+                    console.warn(
+                        "⚠️ Bürger-Rolle ist für den Bot nicht bearbeitbar."
+                    );
                 }
 
-            } catch (nicknameError) {
-
-                console.log(
-                    "⚠️ Original-Nickname konnte nicht wiederhergestellt werden:",
-                    nicknameError.message
+            } else {
+                console.warn(
+                    `⚠️ Rolle "${EXTRA_ROLLEN.buerger}" wurde nicht gefunden.`
                 );
             }
 
+            // Originalen Nickname wiederherstellen
+            if (
+                member.manageable &&
+                eintrag.originalNickname
+            ) {
+                try {
+                    await member.setNickname(
+                        eintrag.originalNickname
+                    );
+                } catch (error) {
+                    console.error(
+                        "❌ Originaler Nickname konnte nicht wiederhergestellt werden:",
+                        error.message
+                    );
+                }
+            }
+
             // Personal entfernen
-            personal.splice(
-                personIndex,
-                1
-            );
+            personal =
+                personal.filter(
+                    person =>
+                        person.discordId !== user.id
+                );
 
             personalSpeichern(personal);
 
@@ -998,31 +1032,32 @@ client.on("interactionCreate", async interaction => {
                 new EmbedBuilder()
                     .setTitle("🚨 Entlassung")
                     .setDescription(
-                        `${user} wurde aus der Army entlassen.`
+                        `${user} wurde aus dem **U.S.Army** Personal entlassen.`
                     )
                     .addFields(
                         {
-                            name: "🎮 Discord",
+                            name: "💬 Discord",
                             value: `${user}`,
                             inline: true
                         },
                         {
-                            name: "🥽 IC Name",
-                            value: icName,
+                            name: "👤 IC-Name",
+                            value: `**${icName}**`,
                             inline: true
                         },
                         {
                             name: "🪪 Dienstnummer",
-                            value: person.dienstnummer,
+                            value:
+                                `**${eintrag.dienstnummer}**`,
                             inline: true
                         },
                         {
-                            name: "⚠️ Grund der Kündigung",
-                            value: grund,
+                            name: "📋 Grund der Kündigung",
+                            value: `**${grund}**`,
                             inline: false
                         },
                         {
-                            name: "👋 Gekündigt von",
+                            name: "👮 Gekündigt von",
                             value: `${interaction.user}`,
                             inline: true
                         },
@@ -1033,172 +1068,171 @@ client.on("interactionCreate", async interaction => {
                             inline: true
                         }
                     )
-                    .setImage(ARMY_BILD_URL)
                     .setFooter({
                         text: "US-Army | ExodusV"
                     })
                     .setTimestamp();
 
-            await interaction.editReply({
-                embeds: [embed]
-            });
+            const armyBild =
+                armyBildErstellen();
 
-        } catch (error) {
+            if (armyBild) {
+                embed.setImage(
+                    "attachment://army.png"
+                );
+            }
 
-            console.error(
-                "❌ Fehler bei Personal entlassen:",
-                error
-            );
-
-            await interaction.editReply({
-                content:
-                    `❌ Fehler bei der Entlassung:\n\`${error.message}\``
-            });
-        }
-
-        return;
-    }
-
-    // ==================================================
-    // PERSONAL UPRANK
-    // ==================================================
-
-    if (subcommand === "uprank") {
-
-        const mitglied =
-            interaction.options.getMember("mitglied");
-
-        const user =
-            interaction.options.getUser("mitglied");
-
-        const alterRang =
-            interaction.options.getInteger("alter_rang");
-
-        const neuerRang =
-            interaction.options.getInteger("neuer_rang");
-
-        const grund =
-            interaction.options.getString("grund");
-
-        if (!mitglied) {
-
-            await interaction.reply({
-                content:
-                    "❌ Das Mitglied konnte nicht gefunden werden.",
-                ephemeral: true
-            });
+            if (armyBild) {
+                await interaction.editReply({
+                    embeds: [embed],
+                    files: [armyBild]
+                });
+            } else {
+                await interaction.editReply({
+                    embeds: [embed]
+                });
+            }
 
             return;
         }
 
-        await interaction.deferReply();
+        // =================================================
+        // PERSONAL UPRANK
+        // =================================================
 
-        try {
+        if (subcommand === "uprank") {
 
-            const personal = personalLaden();
+            const user =
+                interaction.options.getUser("mitglied");
 
-            const person =
-                personal.find(
-                    p => p.userId === user.id
+            const alterRang =
+                Number(
+                    interaction.options.getString("alter_rang")
                 );
 
-            if (!person) {
+            const neuerRang =
+                Number(
+                    interaction.options.getString("neuer_rang")
+                );
 
-                await interaction.editReply({
-                    content:
-                        "❌ Dieses Mitglied befindet sich nicht in der Personaldatei."
-                });
+            const grund =
+                interaction.options.getString("grund");
 
+            let personal = personalLaden();
+
+            let member;
+
+            try {
+                member =
+                    await guild.members.fetch(user.id);
+            } catch {
+                await interaction.editReply(
+                    "❌ Das Mitglied konnte nicht geladen werden."
+                );
+                return;
+            }
+
+            const eintrag =
+                personal.find(
+                    person =>
+                        person.discordId === user.id
+                );
+
+            if (!eintrag) {
+                await interaction.editReply(
+                    "❌ Dieses Mitglied befindet sich nicht im U.S.Army Personal."
+                );
                 return;
             }
 
             // Prüfen, ob alter Rang stimmt
-            if (person.rang !== alterRang) {
-
-                await interaction.editReply({
-                    content:
-                        `❌ Der gespeicherte Rang ist **[${String(person.rang).padStart(2, "0")}] ${RANG_NAMEN[person.rang]}** und nicht **[${String(alterRang).padStart(2, "0")}] ${RANG_NAMEN[alterRang]}**.`
-                });
-
+            if (
+                Number(eintrag.rang) !==
+                alterRang
+            ) {
+                await interaction.editReply(
+                    `❌ Der gespeicherte Rang stimmt nicht mit deiner Auswahl überein.\n\n` +
+                    `Gespeicherter Rang: **[${String(eintrag.rang).padStart(2, "0")}] ${eintrag.rangName}**`
+                );
                 return;
             }
 
+            // Gleicher Rang?
             if (alterRang === neuerRang) {
-
-                await interaction.editReply({
-                    content:
-                        "❌ Der neue Rang darf nicht derselbe wie der alte Rang sein."
-                });
-
+                await interaction.editReply(
+                    "❌ Der neue Rang ist identisch mit dem alten Rang."
+                );
                 return;
             }
 
-            // Neue Dienstnummer bestimmen
+            // Neue Dienstnummer
             const neueDienstnummer =
                 dienstnummerFuerUprank(
-                    neuerRang,
                     personal,
-                    person.dienstnummer
+                    neuerRang,
+                    user.id
                 );
 
             if (!neueDienstnummer) {
 
-                await interaction.editReply({
-                    content:
-                        `❌ Der Rang **[${String(neuerRang).padStart(2, "0")}] ${RANG_NAMEN[neuerRang]}** ist voll bzw. es ist keine Dienstnummer verfügbar.`
-                });
+                let text;
 
+                if (neuerRang === 21) {
+                    text =
+                        "❌ Der Rang **21 – General of the Army** ist bereits voll.";
+                } else if (neuerRang === 20) {
+                    text =
+                        "❌ Der Rang **20 – General** ist bereits voll.";
+                } else if (neuerRang === 19) {
+                    text =
+                        "❌ Der Rang **19 – Lieutnant General** ist bereits voll.";
+                } else {
+                    text =
+                        "❌ Es ist keine freie Dienstnummer mehr verfügbar.";
+                }
+
+                await interaction.editReply(text);
                 return;
             }
 
-            // Alte Army-Rollen entfernen
-            await alteArmyRollenEntfernen(
-                mitglied
-            );
-
-            // Neue Rollen geben
+            // Rollen ändern
             await rollenFuerRangSetzen(
-                mitglied,
+                member,
                 neuerRang
             );
 
-            // Neuer Nickname
-            let neuerNickname =
-                `[ARMY-${neueDienstnummer}] ${person.icName}`;
-
-            if (neuerNickname.length > 32) {
-                neuerNickname =
-                    neuerNickname.substring(0, 32);
-            }
-
-            try {
-
-                await mitglied.setNickname(
-                    neuerNickname
+            // Nickname ändern
+            const neuerNickname =
+                armyNickname(
+                    neueDienstnummer,
+                    eintrag.icName
                 );
 
-            } catch (nicknameError) {
-
-                console.log(
-                    "⚠️ Nickname konnte beim Uprank nicht geändert werden:",
-                    nicknameError.message
-                );
+            if (member.manageable) {
+                try {
+                    await member.setNickname(
+                        neuerNickname
+                    );
+                } catch (error) {
+                    console.error(
+                        "❌ Nickname konnte nicht geändert werden:",
+                        error.message
+                    );
+                }
             }
 
-            // Personal aktualisieren
-            person.rang =
-                neuerRang;
-
-            person.rangName =
+            // Daten aktualisieren
+            eintrag.rang = neuerRang;
+            eintrag.rangName =
                 RANG_NAMEN[neuerRang];
 
-            person.dienstnummer =
+            eintrag.dienstnummer =
                 neueDienstnummer;
 
-            person.uprankVon =
+            eintrag.uprankVon =
                 interaction.user.id;
 
-            person.uprankAm =
+            eintrag.uprankAm =
                 new Date().toISOString();
 
             personalSpeichern(personal);
@@ -1206,41 +1240,45 @@ client.on("interactionCreate", async interaction => {
             // Embed
             const embed =
                 new EmbedBuilder()
-                    .setTitle("📈 Beförderung")
+                    .setTitle("🎖️ Beförderung")
                     .setDescription(
                         `${user} wurde erfolgreich befördert.`
                     )
                     .addFields(
                         {
-                            name: "🎖️ Alter Rang",
+                            name: "👤 IC-Name",
                             value:
-                                `[${String(alterRang).padStart(2, "0")}] ${RANG_NAMEN[alterRang]}`,
-                            inline: true
-                        },
-                        {
-                            name: "🎖️ Neuer Rang",
-                            value:
-                                `[${String(neuerRang).padStart(2, "0")}] ${RANG_NAMEN[neuerRang]}`,
+                                `**${eintrag.icName}**`,
                             inline: true
                         },
                         {
                             name: "🪪 Neue Dienstnummer",
-                            value: neueDienstnummer,
+                            value:
+                                `**${neueDienstnummer}**`,
                             inline: true
                         },
                         {
-                            name: "🥽 IC Name",
-                            value: person.icName,
-                            inline: true
-                        },
-                        {
-                            name: "⚠️ Grund",
-                            value: grund,
+                            name: "📉 Alter Rang",
+                            value:
+                                `**[${String(alterRang).padStart(2, "0")}] ${RANG_NAMEN[alterRang]}**`,
                             inline: false
                         },
                         {
-                            name: "👤 Befördert von",
-                            value: `${interaction.user}`,
+                            name: "📈 Neuer Rang",
+                            value:
+                                `**[${String(neuerRang).padStart(2, "0")}] ${RANG_NAMEN[neuerRang]}**`,
+                            inline: false
+                        },
+                        {
+                            name: "📋 Grund",
+                            value:
+                                `**${grund}**`,
+                            inline: false
+                        },
+                        {
+                            name: "👮 Befördert von",
+                            value:
+                                `${interaction.user}`,
                             inline: true
                         },
                         {
@@ -1255,47 +1293,60 @@ client.on("interactionCreate", async interaction => {
                     })
                     .setTimestamp();
 
+            // Bei Uprank KEIN Bild
             await interaction.editReply({
                 embeds: [embed]
             });
 
-        } catch (error) {
-
-            console.error(
-                "❌ Fehler beim Uprank:",
-                error
-            );
-
-            await interaction.editReply({
-                content:
-                    `❌ Fehler beim Uprank:\n\`${error.message}\``
-            });
+            return;
         }
 
-        return;
+    } catch (error) {
+
+        console.error(
+            "❌ Fehler bei der Interaction:",
+            error
+        );
+
+        try {
+            if (interaction.deferred) {
+                await interaction.editReply(
+                    "❌ Es ist ein Fehler aufgetreten. Bitte überprüfe die Bot-Konsole."
+                );
+            } else if (!interaction.replied) {
+                await interaction.reply(
+                    "❌ Es ist ein Fehler aufgetreten."
+                );
+            }
+        } catch (replyError) {
+            console.error(
+                "❌ Fehler beim Senden der Fehlermeldung:",
+                replyError
+            );
+        }
     }
 });
 
-// ======================================================
+// =====================================================
 // FEHLER
-// ======================================================
+// =====================================================
+
+client.on("error", error => {
+    console.error(
+        "❌ Discord Client Fehler:",
+        error
+    );
+});
 
 process.on("unhandledRejection", error => {
     console.error(
-        "❌ Unhandled Rejection:",
+        "❌ Unhandled Promise Rejection:",
         error
     );
 });
 
-process.on("uncaughtException", error => {
-    console.error(
-        "❌ Uncaught Exception:",
-        error
-    );
-});
-
-// ======================================================
+// =====================================================
 // LOGIN
-// ======================================================
+// =====================================================
 
 client.login(TOKEN);

@@ -24,16 +24,18 @@ if (!TOKEN) {
 
 const DATA_FILE = path.join(__dirname, "personal.json");
 
-// Dein vorhandenes Army-Bild
+// DEIN VORHANDENES ARMY-LOGO
 const ARMY_BILD_URL =
     "https://cdn.discordapp.com/attachments/1549718870691160115/1550820644034322503/image-3.png?ex=6aafb9c6&is=6aae6846&hm=7f7cf2f66aaa643aaefb3269cd026a730025890c88b003f5c913dc298da4ac8b";
 
 // =====================================================
-// CLIENT
+// DISCORD CLIENT
 // =====================================================
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds
+    ]
 });
 
 // =====================================================
@@ -82,23 +84,23 @@ const ROLLEN = {
 };
 
 // =====================================================
-// PERSONAL.JSON
+// PERSONAL.JSON LADEN
 // =====================================================
 
 function personalLaden() {
     try {
         if (!fs.existsSync(DATA_FILE)) {
-            const daten = {
+            const startDaten = {
                 personal: []
             };
 
             fs.writeFileSync(
                 DATA_FILE,
-                JSON.stringify(daten, null, 2),
+                JSON.stringify(startDaten, null, 2),
                 "utf8"
             );
 
-            return daten;
+            return startDaten;
         }
 
         const daten = JSON.parse(
@@ -124,6 +126,10 @@ function personalLaden() {
     }
 }
 
+// =====================================================
+// PERSONAL.JSON SPEICHERN
+// =====================================================
+
 function personalSpeichern(daten) {
     fs.writeFileSync(
         DATA_FILE,
@@ -133,29 +139,49 @@ function personalSpeichern(daten) {
 }
 
 // =====================================================
-// HILFSFUNKTIONEN
+// RANGNUMMER
 // =====================================================
 
 function rangNummer(rang) {
     const match = String(rang).match(/^\[(\d+)\]/);
 
-    return match ? Number(match[1]) : 0;
+    return match
+        ? Number(match[1])
+        : 0;
 }
 
-function rolleFinden(guild, name) {
+// =====================================================
+// ROLLE FINDEN
+// =====================================================
+
+function rolleFinden(guild, rollenName) {
     return guild.roles.cache.find(
-        role => role.name === name
+        role => role.name === rollenName
     );
 }
 
+// =====================================================
+// DATUM
+// =====================================================
+
 function datumDeutsch() {
-    return new Date().toLocaleString("de-DE", {
-        dateStyle: "short",
-        timeStyle: "medium"
-    });
+    return new Date().toLocaleString(
+        "de-DE",
+        {
+            dateStyle: "short",
+            timeStyle: "medium"
+        }
+    );
 }
 
-function nicknameErstellen(icName, dienstnummer) {
+// =====================================================
+// NICKNAME
+// =====================================================
+
+function nicknameErstellen(
+    icName,
+    dienstnummer
+) {
     const nickname =
         `[ARMY-${dienstnummer}] ${icName}`;
 
@@ -167,7 +193,7 @@ function nicknameErstellen(icName, dienstnummer) {
 }
 
 // =====================================================
-// ZUSATZROLLEN JE NACH RANG
+// ZUSATZROLLEN JE RANG
 // =====================================================
 
 function zusatzRollenFuerRang(rang) {
@@ -239,15 +265,18 @@ function zusatzRollenFuerRang(rang) {
 }
 
 // =====================================================
-// DIENSTNUMMER BEI EINSTELLUNG
+// DIENSTNUMMER EINSTELLUNG
 // =====================================================
 
-function dienstnummerErmitteln(personal, rang) {
+function dienstnummerErmitteln(
+    personal,
+    rang
+) {
     const nummer = rangNummer(rang);
 
     let moeglicheNummern = [];
 
-    // Rang 21
+    // 21 = 01-02
     if (nummer === 21) {
         moeglicheNummern = [
             "01",
@@ -255,7 +284,7 @@ function dienstnummerErmitteln(personal, rang) {
         ];
     }
 
-    // Rang 20
+    // 20 = 03-04
     else if (nummer === 20) {
         moeglicheNummern = [
             "03",
@@ -263,7 +292,7 @@ function dienstnummerErmitteln(personal, rang) {
         ];
     }
 
-    // Rang 19
+    // 19 = 05-06
     else if (nummer === 19) {
         moeglicheNummern = [
             "05",
@@ -271,7 +300,7 @@ function dienstnummerErmitteln(personal, rang) {
         ];
     }
 
-    // Rang 18-1
+    // 18-1 = 07-99
     else {
         for (let i = 7; i <= 99; i++) {
             moeglicheNummern.push(
@@ -280,37 +309,36 @@ function dienstnummerErmitteln(personal, rang) {
         }
     }
 
-    const vergebeneNummern = new Set(
+    const vergeben = new Set(
         personal.personal.map(
-            person => String(person.dienstnummer)
+            person =>
+                String(person.dienstnummer)
         )
     );
 
-    const freieNummern =
+    const freie =
         moeglicheNummern.filter(
             nummer =>
-                !vergebeneNummern.has(nummer)
+                !vergeben.has(nummer)
         );
 
-    if (freieNummern.length === 0) {
+    if (freie.length === 0) {
         return null;
     }
 
-    // Bei 21, 20, 19 immer zuerst die niedrigste
     if (nummer >= 19) {
-        return freieNummern[0];
+        return freie[0];
     }
 
-    // Bei 18-1 zufällige freie Nummer
-    return freieNummern[
+    return freie[
         Math.floor(
-            Math.random() * freieNummern.length
+            Math.random() * freie.length
         )
     ];
 }
 
 // =====================================================
-// DIENSTNUMMER BEI UPRANK
+// DIENSTNUMMER UPRANK
 // =====================================================
 
 function dienstnummerFuerUprank(
@@ -318,7 +346,8 @@ function dienstnummerFuerUprank(
     neuerRang,
     alteDienstnummer
 ) {
-    const nummer = rangNummer(neuerRang);
+    const nummer =
+        rangNummer(neuerRang);
 
     let moeglicheNummern = [];
 
@@ -351,36 +380,42 @@ function dienstnummerFuerUprank(
         }
     }
 
-    const vergebeneNummern = new Set(
+    const vergeben = new Set(
         personal.personal
             .filter(
                 person =>
-                    String(person.dienstnummer) !==
-                    String(alteDienstnummer)
+                    String(
+                        person.dienstnummer
+                    ) !==
+                    String(
+                        alteDienstnummer
+                    )
             )
             .map(
                 person =>
-                    String(person.dienstnummer)
+                    String(
+                        person.dienstnummer
+                    )
             )
     );
 
-    const freieNummern =
+    const freie =
         moeglicheNummern.filter(
             nummer =>
-                !vergebeneNummern.has(nummer)
+                !vergeben.has(nummer)
         );
 
-    if (freieNummern.length === 0) {
+    if (freie.length === 0) {
         return null;
     }
 
     if (nummer >= 19) {
-        return freieNummern[0];
+        return freie[0];
     }
 
-    return freieNummern[
+    return freie[
         Math.floor(
-            Math.random() * freieNummern.length
+            Math.random() * freie.length
         )
     ];
 }
@@ -389,16 +424,21 @@ function dienstnummerFuerUprank(
 // MEMBER HOLEN
 // =====================================================
 
-async function memberHolen(guild, userId) {
+async function memberHolen(
+    guild,
+    userId
+) {
     try {
-        return await guild.members.fetch(userId);
-    } catch (error) {
+        return await guild.members.fetch(
+            userId
+        );
+    } catch {
         return null;
     }
 }
 
 // =====================================================
-// ARMY-ROLLEN SETZEN
+// ARMY ROLLEN SETZEN
 // =====================================================
 
 async function armyRollenSetzen(
@@ -408,34 +448,43 @@ async function armyRollenSetzen(
     const benoetigteRollen =
         zusatzRollenFuerRang(rang);
 
-    const alleArmyRollen = new Set([
-        ROLLEN.army,
-        ROLLEN.general,
-        ROLLEN.fieldGradeOfficer,
-        ROLLEN.hauptleute,
-        ROLLEN.leutnant,
-        ROLLEN.unteroffiziere,
-        ROLLEN.mannschaft,
-        ROLLEN.abteilungen,
+    const alleArmyRollen =
+        new Set([
+            ROLLEN.army,
+            ROLLEN.general,
+            ROLLEN.fieldGradeOfficer,
+            ROLLEN.hauptleute,
+            ROLLEN.leutnant,
+            ROLLEN.unteroffiziere,
+            ROLLEN.mannschaft,
+            ROLLEN.abteilungen,
 
-        ...RANG_CHOICES.map(
-            choice => choice.value
-        )
-    ]);
+            ...RANG_CHOICES.map(
+                choice =>
+                    choice.value
+            )
+        ]);
 
     // Alte Army-Rollen entfernen
     const alteRollen =
         member.roles.cache.filter(
             role =>
-                alleArmyRollen.has(role.name)
+                alleArmyRollen.has(
+                    role.name
+                )
         );
 
-    for (const role of alteRollen.values()) {
+    for (
+        const role of
+        alteRollen.values()
+    ) {
         try {
-            await member.roles.remove(role);
+            await member.roles.remove(
+                role
+            );
         } catch (error) {
             console.error(
-                `❌ Konnte Rolle "${role.name}" nicht entfernen:`,
+                `❌ Rolle ${role.name} konnte nicht entfernt werden:`,
                 error.message
             );
         }
@@ -443,12 +492,16 @@ async function armyRollenSetzen(
 
     const fehlendeRollen = [];
 
-    // Neue Rollen setzen
-    for (const rollenName of benoetigteRollen) {
-        const role = rolleFinden(
-            member.guild,
-            rollenName
-        );
+    // Neue Rollen hinzufügen
+    for (
+        const rollenName of
+        benoetigteRollen
+    ) {
+        const role =
+            rolleFinden(
+                member.guild,
+                rollenName
+            );
 
         if (!role) {
             fehlendeRollen.push(
@@ -459,10 +512,12 @@ async function armyRollenSetzen(
         }
 
         try {
-            await member.roles.add(role);
+            await member.roles.add(
+                role
+            );
         } catch (error) {
             console.error(
-                `❌ Konnte Rolle "${rollenName}" nicht setzen:`,
+                `❌ Rolle ${rollenName} konnte nicht gesetzt werden:`,
                 error.message
             );
 
@@ -476,7 +531,7 @@ async function armyRollenSetzen(
 }
 
 // =====================================================
-// SLASH COMMANDS
+// PING
 // =====================================================
 
 const pingCommand =
@@ -486,6 +541,10 @@ const pingCommand =
             "Zeigt die Bot-Latenz."
         );
 
+// =====================================================
+// PERSONAL COMMAND
+// =====================================================
+
 const personalCommand =
     new SlashCommandBuilder()
         .setName("personal")
@@ -493,16 +552,16 @@ const personalCommand =
             "Verwaltung des U.S.Army-Personals"
         )
 
-        // ================================
+        // ==============================
         // EINSTELLEN
-        // ================================
+        // ==============================
 
         .addSubcommand(
             subcommand =>
                 subcommand
                     .setName("einstellen")
                     .setDescription(
-                        "Stellt ein Mitglied in die U.S.Army ein."
+                        "Stellt ein Mitglied ein."
                     )
 
                     .addUserOption(
@@ -510,7 +569,7 @@ const personalCommand =
                             option
                                 .setName("mitglied")
                                 .setDescription(
-                                    "Das Discord-Mitglied."
+                                    "Discord-Mitglied."
                                 )
                                 .setRequired(true)
                     )
@@ -520,7 +579,7 @@ const personalCommand =
                             option
                                 .setName("ic_name")
                                 .setDescription(
-                                    "Der IC-Name."
+                                    "IC-Name."
                                 )
                                 .setRequired(true)
                     )
@@ -530,7 +589,7 @@ const personalCommand =
                             option
                                 .setName("rang")
                                 .setDescription(
-                                    "Der Army-Rang."
+                                    "Army-Rang."
                                 )
                                 .setRequired(true);
 
@@ -543,16 +602,16 @@ const personalCommand =
                     )
         )
 
-        // ================================
+        // ==============================
         // ENTLASSEN
-        // ================================
+        // ==============================
 
         .addSubcommand(
             subcommand =>
                 subcommand
                     .setName("entlassen")
                     .setDescription(
-                        "Entlässt ein Mitglied aus der U.S.Army."
+                        "Entlässt ein Mitglied."
                     )
 
                     .addUserOption(
@@ -560,7 +619,7 @@ const personalCommand =
                             option
                                 .setName("mitglied")
                                 .setDescription(
-                                    "Das Discord-Mitglied."
+                                    "Discord-Mitglied."
                                 )
                                 .setRequired(true)
                     )
@@ -570,7 +629,7 @@ const personalCommand =
                             option
                                 .setName("ic_name")
                                 .setDescription(
-                                    "Der IC-Name."
+                                    "IC-Name."
                                 )
                                 .setRequired(true)
                     )
@@ -586,9 +645,9 @@ const personalCommand =
                     )
         )
 
-        // ================================
+        // ==============================
         // UPRANK
-        // ================================
+        // ==============================
 
         .addSubcommand(
             subcommand =>
@@ -603,7 +662,7 @@ const personalCommand =
                             option
                                 .setName("mitglied")
                                 .setDescription(
-                                    "Das Discord-Mitglied."
+                                    "Discord-Mitglied."
                                 )
                                 .setRequired(true)
                     )
@@ -613,7 +672,7 @@ const personalCommand =
                             option
                                 .setName("alter_rang")
                                 .setDescription(
-                                    "Der bisherige Rang."
+                                    "Alter Rang."
                                 )
                                 .setRequired(true);
 
@@ -630,7 +689,7 @@ const personalCommand =
                             option
                                 .setName("neuer_rang")
                                 .setDescription(
-                                    "Der neue Rang."
+                                    "Neuer Rang."
                                 )
                                 .setRequired(true);
 
@@ -657,60 +716,73 @@ const personalCommand =
 // BOT READY
 // =====================================================
 
-client.once("ready", async () => {
-    console.log(
-        `✅ ${client.user.tag} ist online.`
-    );
-
-    try {
-        const rest =
-            new REST({
-                version: "10"
-            }).setToken(TOKEN);
-
-        await rest.put(
-            Routes.applicationCommands(
-                client.user.id
-            ),
-            {
-                body: [
-                    pingCommand.toJSON(),
-                    personalCommand.toJSON()
-                ]
-            }
-        );
+client.once(
+    "ready",
+    async () => {
 
         console.log(
-            "✅ Slash-Commands registriert."
+            `✅ ${client.user.tag} ist online.`
         );
-    } catch (error) {
-        console.error(
-            "❌ Fehler bei den Slash-Commands:",
-            error
-        );
+
+        try {
+
+            const rest =
+                new REST({
+                    version: "10"
+                }).setToken(
+                    TOKEN
+                );
+
+            await rest.put(
+                Routes.applicationCommands(
+                    client.user.id
+                ),
+                {
+                    body: [
+                        pingCommand.toJSON(),
+                        personalCommand.toJSON()
+                    ]
+                }
+            );
+
+            console.log(
+                "✅ Slash-Commands wurden registriert."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ Fehler bei Slash-Commands:",
+                error
+            );
+
+        }
     }
-});
+);
 
 // =====================================================
-// INTERACTIONS
+// INTERACTION
 // =====================================================
 
 client.on(
     "interactionCreate",
     async interaction => {
 
-        if (!interaction.isChatInputCommand()) {
+        if (
+            !interaction.isChatInputCommand()
+        ) {
             return;
         }
 
-        // ================================
+        // ==============================
         // PING
-        // ================================
+        // ==============================
 
         if (
             interaction.commandName ===
             "ping"
         ) {
+
             await interaction.reply(
                 `🏓 Pong! ${client.ws.ping}ms`
             );
@@ -736,6 +808,7 @@ client.on(
             subcommand ===
             "einstellen"
         ) {
+
             const user =
                 interaction.options.getUser(
                     "mitglied"
@@ -755,9 +828,10 @@ client.on(
                 interaction.guild;
 
             if (!guild) {
+
                 await interaction.reply({
                     content:
-                        "❌ Der Befehl funktioniert nur auf einem Server.",
+                        "❌ Nur auf einem Discord-Server möglich.",
                     ephemeral: true
                 });
 
@@ -771,9 +845,10 @@ client.on(
                 );
 
             if (!member) {
+
                 await interaction.reply({
                     content:
-                        "❌ Mitglied konnte nicht gefunden werden.",
+                        "❌ Mitglied wurde nicht gefunden.",
                     ephemeral: true
                 });
 
@@ -785,25 +860,26 @@ client.on(
             const personal =
                 personalLaden();
 
-            // Bereits eingestellt?
-            const bereitsVorhanden =
+            const bereitsEingestellt =
                 personal.personal.find(
                     person =>
                         person.userId ===
                         member.id
                 );
 
-            if (bereitsVorhanden) {
+            if (
+                bereitsEingestellt
+            ) {
+
                 await interaction.editReply({
                     content:
-                        `❌ ${member} ist bereits in der U.S.Army.\n` +
-                        `Dienstnummer: **${bereitsVorhanden.dienstnummer}**`
+                        `❌ ${member} ist bereits eingestellt.\n` +
+                        `Dienstnummer: **${bereitsEingestellt.dienstnummer}**`
                 });
 
                 return;
             }
 
-            // Dienstnummer
             const dienstnummer =
                 dienstnummerErmitteln(
                     personal,
@@ -811,49 +887,61 @@ client.on(
                 );
 
             if (!dienstnummer) {
+
                 await interaction.editReply({
                     content:
-                        `❌ Der Rang **${rang}** ist voll oder es ist keine Dienstnummer mehr frei.`
+                        `❌ Der Rang **${rang}** ist voll oder keine Dienstnummer ist frei.`
                 });
 
                 return;
             }
 
-            // Rollen
             const rollenFehler =
                 await armyRollenSetzen(
                     member,
                     rang
                 );
 
-            // Alten Nickname speichern
             const originalNickname =
                 member.nickname;
 
-            // Neuer Nickname
             try {
+
                 await member.setNickname(
                     nicknameErstellen(
                         icName,
                         dienstnummer
                     )
                 );
+
             } catch (error) {
+
                 console.error(
-                    "❌ Nickname konnte nicht gesetzt werden:",
+                    "❌ Nickname konnte nicht geändert werden:",
                     error.message
                 );
+
             }
 
-            // Personal speichern
             personal.personal.push({
-                userId: member.id,
-                icName: icName,
-                rang: rang,
-                dienstnummer: dienstnummer,
-                originalNickname: originalNickname,
+                userId:
+                    member.id,
+
+                icName:
+                    icName,
+
+                rang:
+                    rang,
+
+                dienstnummer:
+                    dienstnummer,
+
+                originalNickname:
+                    originalNickname,
+
                 eingestelltVon:
                     interaction.user.id,
+
                 eingestelltAm:
                     new Date().toISOString()
             });
@@ -862,14 +950,16 @@ client.on(
                 personal
             );
 
-            // =================================================
-            // EINSTELLUNGS-EMBED
-            // DAS BILD IST GANZ UNTEN
-            // =================================================
+            // ==========================================
+            // PERSONAL EINSTELLUNG EMBED
+            // ==========================================
 
             const embed =
                 new EmbedBuilder()
-                    .setColor(0x1f2937)
+
+                    .setColor(
+                        0x1f2937
+                    )
 
                     .setTitle(
                         "🪖 Personal Einstellung"
@@ -887,6 +977,7 @@ client.on(
                                 `**${dienstnummer}**`,
                             inline: true
                         },
+
                         {
                             name:
                                 "🎖️ Rang",
@@ -894,6 +985,7 @@ client.on(
                                 rang,
                             inline: true
                         },
+
                         {
                             name:
                                 "💚 IC Name",
@@ -901,6 +993,7 @@ client.on(
                                 icName,
                             inline: true
                         },
+
                         {
                             name:
                                 "👤 Discord",
@@ -908,6 +1001,7 @@ client.on(
                                 `${member}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "🤝 Eingestellt von",
@@ -915,6 +1009,7 @@ client.on(
                                 `${interaction.user}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "📅 Datum",
@@ -924,7 +1019,7 @@ client.on(
                         }
                     )
 
-                    // DEIN BILD UNTEN IM EMBED
+                    // DEIN LOGO UNTEN
                     .setImage(
                         ARMY_BILD_URL
                     )
@@ -943,6 +1038,7 @@ client.on(
             if (
                 rollenFehler.length > 0
             ) {
+
                 antwort +=
                     `\n\n⚠️ Folgende Rollen konnten nicht gesetzt werden:\n` +
                     rollenFehler
@@ -954,8 +1050,12 @@ client.on(
             }
 
             await interaction.editReply({
-                content: antwort,
-                embeds: [embed]
+                content:
+                    antwort,
+
+                embeds: [
+                    embed
+                ]
             });
 
             return;
@@ -969,6 +1069,7 @@ client.on(
             subcommand ===
             "entlassen"
         ) {
+
             const user =
                 interaction.options.getUser(
                     "mitglied"
@@ -988,9 +1089,10 @@ client.on(
                 interaction.guild;
 
             if (!guild) {
+
                 await interaction.reply({
                     content:
-                        "❌ Der Befehl funktioniert nur auf einem Server.",
+                        "❌ Nur auf einem Discord-Server möglich.",
                     ephemeral: true
                 });
 
@@ -1004,9 +1106,10 @@ client.on(
                 );
 
             if (!member) {
+
                 await interaction.reply({
                     content:
-                        "❌ Mitglied konnte nicht gefunden werden.",
+                        "❌ Mitglied wurde nicht gefunden.",
                     ephemeral: true
                 });
 
@@ -1026,9 +1129,10 @@ client.on(
                 );
 
             if (index === -1) {
+
                 await interaction.editReply({
                     content:
-                        `❌ ${member} ist nicht in der Personalakte eingetragen.`
+                        `❌ ${member} ist nicht in der Personalakte.`
                 });
 
                 return;
@@ -1037,24 +1141,27 @@ client.on(
             const person =
                 personal.personal[index];
 
-            // IC-Name prüfen
             if (
                 String(
                     person.icName
-                ).trim().toLowerCase() !==
+                )
+                    .trim()
+                    .toLowerCase() !==
                 String(
                     icName
-                ).trim().toLowerCase()
+                )
+                    .trim()
+                    .toLowerCase()
             ) {
+
                 await interaction.editReply({
                     content:
-                        "❌ Der angegebene IC-Name stimmt nicht mit der Personalakte überein."
+                        "❌ Der IC-Name stimmt nicht mit der Personalakte überein."
                 });
 
                 return;
             }
 
-            // Bürger-Rolle
             const buergerRolle =
                 rolleFinden(
                     guild,
@@ -1062,6 +1169,7 @@ client.on(
                 );
 
             if (!buergerRolle) {
+
                 await interaction.editReply({
                     content:
                         `❌ Die Rolle **${ROLLEN.buerger}** wurde nicht gefunden.`
@@ -1070,27 +1178,31 @@ client.on(
                 return;
             }
 
-            // Alle Rollen außer @everyone und Bürger entfernen
+            const rollenFehler = [];
+
             const zuEntfernendeRollen =
                 member.roles.cache.filter(
                     role =>
                         role.id !== guild.id &&
-                        role.id !== buergerRolle.id
+                        role.id !==
+                            buergerRolle.id
                 );
-
-            const rollenFehler = [];
 
             for (
                 const role of
                 zuEntfernendeRollen.values()
             ) {
+
                 try {
+
                     await member.roles.remove(
                         role
                     );
+
                 } catch (error) {
+
                     console.error(
-                        `❌ Rolle "${role.name}" konnte nicht entfernt werden:`,
+                        `❌ Rolle ${role.name} konnte nicht entfernt werden:`,
                         error.message
                     );
 
@@ -1100,29 +1212,36 @@ client.on(
                 }
             }
 
-            // Bürger hinzufügen
             try {
+
                 await member.roles.add(
                     buergerRolle
                 );
+
             } catch (error) {
+
                 console.error(
                     "❌ Bürger-Rolle konnte nicht gesetzt werden:",
                     error.message
                 );
+
             }
 
-            // Alten Nickname wiederherstellen
+            // Alten Nickname zurücksetzen
             try {
+
                 await member.setNickname(
                     person.originalNickname ||
                     null
                 );
+
             } catch (error) {
+
                 console.error(
                     "❌ Nickname konnte nicht wiederhergestellt werden:",
                     error.message
                 );
+
             }
 
             // Personalakte löschen
@@ -1135,14 +1254,16 @@ client.on(
                 personal
             );
 
-            // =================================================
+            // ==========================================
             // ENTLASSUNGS-EMBED
-            // DAS BILD IST GANZ UNTEN
-            // =================================================
+            // ==========================================
 
             const embed =
                 new EmbedBuilder()
-                    .setColor(0x8b0000)
+
+                    .setColor(
+                        0x8b0000
+                    )
 
                     .setTitle(
                         "🚨 Entlassung"
@@ -1160,6 +1281,7 @@ client.on(
                                 `${member}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "💚 IC Name",
@@ -1167,6 +1289,7 @@ client.on(
                                 icName,
                             inline: true
                         },
+
                         {
                             name:
                                 "🪪 Dienstnummer",
@@ -1174,6 +1297,7 @@ client.on(
                                 `**${person.dienstnummer}**`,
                             inline: true
                         },
+
                         {
                             name:
                                 "⚠️ Grund der Kündigung",
@@ -1181,6 +1305,7 @@ client.on(
                                 grund,
                             inline: false
                         },
+
                         {
                             name:
                                 "👋 Gekündigt von",
@@ -1188,6 +1313,7 @@ client.on(
                                 `${interaction.user}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "📅 Datum",
@@ -1197,7 +1323,7 @@ client.on(
                         }
                     )
 
-                    // DEIN BILD UNTEN IM EMBED
+                    // DEIN LOGO UNTEN
                     .setImage(
                         ARMY_BILD_URL
                     )
@@ -1216,8 +1342,9 @@ client.on(
             if (
                 rollenFehler.length > 0
             ) {
+
                 antwort +=
-                    `\n\n⚠️ Einige Rollen konnten wegen der Discord-Rollenhierarchie nicht entfernt werden:\n` +
+                    `\n\n⚠️ Einige Rollen konnten nicht entfernt werden:\n` +
                     rollenFehler
                         .map(
                             rolle =>
@@ -1227,21 +1354,26 @@ client.on(
             }
 
             await interaction.editReply({
-                content: antwort,
-                embeds: [embed]
+                content:
+                    antwort,
+
+                embeds: [
+                    embed
+                ]
             });
 
             return;
         }
 
         // =================================================
-        // UPRANK
+        // PERSONAL UPRANK
         // =================================================
 
         if (
             subcommand ===
             "uprank"
         ) {
+
             const user =
                 interaction.options.getUser(
                     "mitglied"
@@ -1266,9 +1398,10 @@ client.on(
                 interaction.guild;
 
             if (!guild) {
+
                 await interaction.reply({
                     content:
-                        "❌ Der Befehl funktioniert nur auf einem Server.",
+                        "❌ Nur auf einem Discord-Server möglich.",
                     ephemeral: true
                 });
 
@@ -1282,9 +1415,10 @@ client.on(
                 );
 
             if (!member) {
+
                 await interaction.reply({
                     content:
-                        "❌ Mitglied konnte nicht gefunden werden.",
+                        "❌ Mitglied wurde nicht gefunden.",
                     ephemeral: true
                 });
 
@@ -1297,9 +1431,10 @@ client.on(
                 alterRang ===
                 neuerRang
             ) {
+
                 await interaction.editReply({
                     content:
-                        "❌ Alter und neuer Rang dürfen nicht identisch sein."
+                        "❌ Alter und neuer Rang dürfen nicht gleich sein."
                 });
 
                 return;
@@ -1316,9 +1451,10 @@ client.on(
                 );
 
             if (!person) {
+
                 await interaction.editReply({
                     content:
-                        `❌ ${member} ist nicht in der Personalakte eingetragen.`
+                        `❌ ${member} ist nicht in der Personalakte.`
                 });
 
                 return;
@@ -1328,6 +1464,7 @@ client.on(
                 person.rang !==
                 alterRang
             ) {
+
                 await interaction.editReply({
                     content:
                         `❌ Der gespeicherte Rang stimmt nicht.\n\n` +
@@ -1351,23 +1488,21 @@ client.on(
                 );
 
             if (!neueDienstnummer) {
+
                 await interaction.editReply({
                     content:
-                        `❌ Der neue Rang **${neuerRang}** ist voll oder es ist keine Dienstnummer mehr frei.\n` +
-                        `Die Beförderung wurde nicht durchgeführt.`
+                        `❌ Der neue Rang **${neuerRang}** ist voll oder keine Dienstnummer ist frei.`
                 });
 
                 return;
             }
 
-            // Rollen ändern
             const rollenFehler =
                 await armyRollenSetzen(
                     member,
                     neuerRang
                 );
 
-            // Personalakte aktualisieren
             person.rang =
                 neuerRang;
 
@@ -1384,25 +1519,30 @@ client.on(
                 personal
             );
 
-            // Nickname aktualisieren
             try {
+
                 await member.setNickname(
                     nicknameErstellen(
                         person.icName,
                         neueDienstnummer
                     )
                 );
+
             } catch (error) {
+
                 console.error(
                     "❌ Nickname konnte nicht geändert werden:",
                     error.message
                 );
+
             }
 
-            // UPRANK EMBED
             const embed =
                 new EmbedBuilder()
-                    .setColor(0xb8860b)
+
+                    .setColor(
+                        0xb8860b
+                    )
 
                     .setTitle(
                         "🎖️ Rangänderung"
@@ -1420,6 +1560,7 @@ client.on(
                                 `${member}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "📉 Alter Rang",
@@ -1427,6 +1568,7 @@ client.on(
                                 alterRang,
                             inline: true
                         },
+
                         {
                             name:
                                 "📈 Neuer Rang",
@@ -1434,6 +1576,7 @@ client.on(
                                 neuerRang,
                             inline: true
                         },
+
                         {
                             name:
                                 "🪪 Neue Dienstnummer",
@@ -1441,6 +1584,7 @@ client.on(
                                 `**${neueDienstnummer}**`,
                             inline: true
                         },
+
                         {
                             name:
                                 "📝 Grund",
@@ -1448,6 +1592,7 @@ client.on(
                                 grund,
                             inline: false
                         },
+
                         {
                             name:
                                 "🤝 Befördert von",
@@ -1455,6 +1600,7 @@ client.on(
                                 `${interaction.user}`,
                             inline: true
                         },
+
                         {
                             name:
                                 "📅 Datum",
@@ -1478,6 +1624,7 @@ client.on(
             if (
                 rollenFehler.length > 0
             ) {
+
                 antwort +=
                     `\n\n⚠️ Folgende Rollen konnten nicht gesetzt werden:\n` +
                     rollenFehler
@@ -1489,8 +1636,12 @@ client.on(
             }
 
             await interaction.editReply({
-                content: antwort,
-                embeds: [embed]
+                content:
+                    antwort,
+
+                embeds: [
+                    embed
+                ]
             });
 
             return;
@@ -1499,14 +1650,14 @@ client.on(
 );
 
 // =====================================================
-// FEHLERBEHANDLUNG
+// FEHLER
 // =====================================================
 
 client.on(
     "error",
     error => {
         console.error(
-            "❌ Discord-Client-Fehler:",
+            "❌ Discord-Fehler:",
             error
         );
     }
@@ -1516,7 +1667,7 @@ process.on(
     "unhandledRejection",
     error => {
         console.error(
-            "❌ Unhandled Promise Rejection:",
+            "❌ Unhandled Rejection:",
             error
         );
     }
@@ -1536,4 +1687,6 @@ process.on(
 // LOGIN
 // =====================================================
 
-client.login(TOKEN);
+client.login(
+    TOKEN
+);

@@ -1,0 +1,8 @@
+{
+  "name": "us-army-bot",
+  "version": "1.0.0",
+  "description": "U.S.Army Discord Personal Bot",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "dependencies": { "discord.js": "^14.25.1", "dotenv": "^17.2.2" }
+}
